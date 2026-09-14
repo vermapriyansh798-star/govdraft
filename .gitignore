@@ -1,0 +1,29 @@
+# Environment variables (NEVER COMMIT)
+.env
+.env*.local
+
+# Python
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+govdraft.db
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
