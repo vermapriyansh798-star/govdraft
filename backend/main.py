@@ -163,12 +163,35 @@ async def approve_dpr(
     dpr = result.scalar_one_or_none()
     if not dpr:
         raise HTTPException(404, "DPR not found")
+    if dpr.status == DprStatus.APPROVED.value:
+        raise HTTPException(400, "DPR has already been approved")
+    if dpr.status == DprStatus.REJECTED.value:
+        raise HTTPException(400, "DPR has already been rejected and cannot be approved")
     if dpr.status != DprStatus.PENDING_FINANCE.value:
         raise HTTPException(400, "DPR is not pending finance approval")
 
     dpr.status = DprStatus.APPROVED.value
     dpr.budget_cap = payload.budget_cap
     dpr.conditions = payload.conditions
+    await db.commit()
+    await db.refresh(dpr)
+    return dpr
+
+
+@app.put("/api/dpr/{dpr_id}/reject", response_model=DprOut)
+async def reject_dpr(dpr_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DPR).where(DPR.id == dpr_id))
+    dpr = result.scalar_one_or_none()
+    if not dpr:
+        raise HTTPException(404, "DPR not found")
+    if dpr.status == DprStatus.APPROVED.value:
+        raise HTTPException(400, "DPR has already been approved and cannot be rejected")
+    if dpr.status == DprStatus.REJECTED.value:
+        raise HTTPException(400, "DPR has already been rejected")
+    if dpr.status != DprStatus.PENDING_FINANCE.value:
+        raise HTTPException(400, "DPR is not pending finance review")
+
+    dpr.status = DprStatus.REJECTED.value
     await db.commit()
     await db.refresh(dpr)
     return dpr
@@ -186,6 +209,11 @@ async def generate_rfp_endpoint(dpr_id: int, db: AsyncSession = Depends(get_db))
         raise HTTPException(404, "DPR not found")
     if dpr.status != DprStatus.APPROVED.value:
         raise HTTPException(400, "DPR must be APPROVED before generating an RFP")
+
+    # Prevent duplicate RFP for the same DPR
+    existing_rfp = await db.execute(select(RFP).where(RFP.dpr_id == dpr_id))
+    if existing_rfp.scalar_one_or_none():
+        raise HTTPException(400, "An RFP has already been generated for this DPR")
 
     # ── Deterministic calculations (NEVER by LLM) ──
     emd = calculate_emd(dpr.project_cost)

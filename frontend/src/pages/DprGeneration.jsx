@@ -11,13 +11,39 @@ const INITIAL = {
   scope_of_work: "",
 };
 
+const DEPARTMENTS = [
+  "Public Works Department (PWD)",
+  "Department of Health & Family Welfare",
+  "Information Technology Development Agency (ITDA)",
+  "Uttarakhand Jal Sansthan (UJS)",
+  "Department of Education",
+  "Department of Agriculture",
+  "Department of Forest",
+  "Department of Tourism",
+  "Department of Energy (UPCL)",
+  "Urban Development Department",
+  "Department of Transport",
+  "Department of Irrigation",
+  "Uttarakhand Housing & Urban Development Authority (UAUDA)",
+  "Department of Rural Development",
+  "Department of Finance",
+  "Custom…",
+];
+
 export default function DprGeneration() {
   const [form, setForm] = useState(INITIAL);
+  const [deptSelection, setDeptSelection] = useState("");
   const [milestones, setMilestones] = useState([{ name: "", weight: "" }]);
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+
+  const handleDeptChange = (val) => {
+    setDeptSelection(val);
+    if (val !== "Custom…") set("department", val);
+    else set("department", "");
+  };
 
   const addMilestone = () => setMilestones((p) => [...p, { name: "", weight: "" }]);
   const removeMilestone = (i) => setMilestones((p) => p.filter((_, idx) => idx !== i));
@@ -39,6 +65,7 @@ export default function DprGeneration() {
       const dpr = await createDpr(payload);
       toast.success(`DPR #${dpr.id} created — "${dpr.title}"`);
       setForm(INITIAL);
+      setDeptSelection("");
       setMilestones([{ name: "", weight: "" }]);
     } catch (err) {
       toast.error(err.message);
@@ -59,13 +86,28 @@ export default function DprGeneration() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 1.25rem" }}>
             <div className="form-group">
               <label>Department</label>
-              <input
+              <select
                 className="form-control"
                 required
-                value={form.department}
-                onChange={(e) => set("department", e.target.value)}
-                placeholder="e.g. Public Works"
-              />
+                value={deptSelection}
+                onChange={(e) => handleDeptChange(e.target.value)}
+              >
+                <option value="">— Select a department —</option>
+                {DEPARTMENTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+              {deptSelection === "Custom…" && (
+                <input
+                  className="form-control"
+                  style={{ marginTop: "0.5rem" }}
+                  required
+                  value={form.department}
+                  onChange={(e) => set("department", e.target.value)}
+                  placeholder="Enter department name…"
+                  autoFocus
+                />
+              )}
             </div>
             <div className="form-group">
               <label>Project Title</label>

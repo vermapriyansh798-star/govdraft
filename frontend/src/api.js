@@ -17,6 +17,7 @@ export const createDpr = (data) => request("/dpr", { method: "POST", body: JSON.
 export const listDprs = () => request("/dpr");
 export const getDpr = (id) => request(`/dpr/${id}`);
 export const approveDpr = (id, data) => request(`/dpr/${id}/approve`, { method: "PUT", body: JSON.stringify(data) });
+export const rejectDpr = (id) => request(`/dpr/${id}/reject`, { method: "PUT" });
 
 // ── RFP ──
 export const generateRfp = (dprId) => request(`/rfp/generate/${dprId}`, { method: "POST" });
